@@ -163,6 +163,27 @@
   .nav-item.danger { color: var(--red); }
   .nav-item.danger:hover { color: var(--red); background: rgba(248,81,73,0.08); border-left-color: var(--red); }
 
+  /* Dashboard gets a louder visual treatment — it's the primary destination
+     once the user has set things up, and still useful pre-setup for the
+     Keys / skills / analytics tabs that hermes exposes. */
+  .nav-item.highlight {
+    color: var(--text);
+    background: linear-gradient(90deg, rgba(98,114,255,0.18), rgba(98,114,255,0.06));
+    border-left-color: var(--accent);
+    font-weight: 500;
+    margin: 2px 0;
+  }
+  .nav-item.highlight:hover {
+    background: linear-gradient(90deg, rgba(98,114,255,0.28), rgba(98,114,255,0.10));
+  }
+  .nav-item.highlight .nav-icon { color: var(--accent2); }
+  .nav-item.highlight .nav-arrow {
+    margin-left: auto;
+    color: var(--accent2);
+    font-family: var(--font-mono);
+    font-size: 12px;
+  }
+
   .nav-icon { font-size: 15px; width: 18px; text-align: center; }
 
   .nav-badge {
@@ -685,12 +706,12 @@
     </div>
 
     <div class="nav-group-label" style="margin-top:8px">Dashboard</div>
-    <div class="nav-item"
-         :class="{locked: !savedConfigComplete}"
-         @click="savedConfigComplete && (window.location.href='/')"
-         :title="savedConfigComplete ? 'Open the native Hermes dashboard' : 'Complete setup first'">
+    <div class="nav-item highlight"
+         @click="window.location.href='/'"
+         title="Open the native Hermes dashboard — providers, skills, analytics, sessions">
       <span class="nav-icon">⬢</span>
       <span>Hermes Dashboard</span>
+      <span class="nav-arrow">→</span>
     </div>
 
     <div class="nav-group-label" style="margin-top:8px">Monitor</div>
@@ -761,6 +782,11 @@
           <span class="req-note">* required</span>
         </div>
         <div class="card">
+          <p class="hint" style="margin:0 0 12px;line-height:1.55;">
+            The dropdown below covers the most common providers. For the exhaustive list,
+            open the <a href="/" style="color:var(--accent2);text-decoration:none;font-weight:500;">Hermes Dashboard</a>
+            and use the <strong>Keys</strong> tab to configure any provider Hermes supports.
+          </p>
           <div>
             <label class="field-label">Provider</label>
             <select x-model="selectedProvider" @change="onProviderChange()">
@@ -929,9 +955,9 @@
           <input type="checkbox" x-model="restartOnSave"> Restart gateway after save
         </label>
         <div style="display:flex;gap:10px;align-items:center;">
-          <button class="btn" :disabled="!savedConfigComplete"
+          <button class="btn"
                   @click="window.location.href='/'"
-                  :title="savedConfigComplete ? 'Open the native Hermes dashboard' : 'Save a provider + model first'">
+                  title="Open the native Hermes dashboard — browse all providers, skills, and analytics">
             Open Dashboard →
           </button>
           <button class="btn primary" @click="saveConfig()" :disabled="saving">
@@ -1108,6 +1134,12 @@
             </li>
             <li>
               Head over to the <strong>Setup</strong> page (left sidebar), select <strong>OpenRouter</strong> as provider, paste your API key, and enter the model name.
+              <span class="step-note">
+                Want a different provider (Anthropic, DeepSeek, Groq, Cerebras, Mistral, etc.)? Open the
+                <a href="/" style="color:var(--accent2);">Hermes Dashboard</a> from the sidebar — the
+                <strong>Keys</strong> tab lists every provider Hermes supports out of the box, plus
+                skills, toolsets, and analytics you can configure from there.
+              </span>
             </li>
           </ol>
         </div>

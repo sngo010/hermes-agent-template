@@ -847,10 +847,13 @@ async def _proxy_to_dashboard(request: Request) -> Response:
 
 
 async def route_root(request: Request) -> Response:
-    """GET /: redirect to /setup if not configured, else proxy to the dashboard."""
+    """GET /: proxy to the dashboard.
+
+    The dashboard is always reachable — Hermes ships with a lot of config
+    surface area (Keys tab, skills, toolsets, analytics, etc.) that's useful
+    even before a provider+model is saved via our setup wizard.
+    """
     if err := guard(request): return err
-    if request.method == "GET" and not is_config_complete():
-        return RedirectResponse("/setup", status_code=302)
     return await _proxy_to_dashboard(request)
 
 
