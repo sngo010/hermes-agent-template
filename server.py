@@ -341,10 +341,16 @@ class Dashboard:
     reverse proxy on $PORT, where edge basic auth guards every request.
     The dashboard is independent of the gateway: it reads config files
     directly and tolerates a stopped gateway.
+
+    All subprocess output is streamed to our stdout (→ Railway logs) with a
+    `[dashboard]` prefix AND retained in a ring buffer for diagnostics.
+    Unexpected exits are explicitly logged with their return code.
     """
 
     def __init__(self):
         self.proc: asyncio.subprocess.Process | None = None
+        self.logs: deque[str] = deque(maxlen=300)
+        self._drain_task: asyncio.Task | None = None
 
     async def start(self):
         if self.proc and self.proc.returncode is None:
@@ -355,12 +361,30 @@ class Dashboard:
                 "--host", HERMES_DASHBOARD_HOST,
                 "--port", str(HERMES_DASHBOARD_PORT),
                 "--no-open",
-                stdout=asyncio.subprocess.DEVNULL,
-                stderr=asyncio.subprocess.DEVNULL,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.STDOUT,
             )
-            print(f"[dashboard] started on {HERMES_DASHBOARD_URL}", flush=True)
+            print(f"[dashboard] spawned pid={self.proc.pid} → {HERMES_DASHBOARD_URL}", flush=True)
+            self._drain_task = asyncio.create_task(self._drain())
         except Exception as e:
-            print(f"[dashboard] failed to start: {e}", flush=True)
+            print(f"[dashboard] FAILED to spawn: {e!r}", flush=True)
+
+    async def _drain(self):
+        """Stream subprocess output to Railway logs (prefixed) and a ring buffer."""
+        assert self.proc and self.proc.stdout
+        try:
+            async for raw in self.proc.stdout:
+                line = ANSI_ESCAPE.sub("", raw.decode(errors="replace").rstrip())
+                self.logs.append(line)
+                print(f"[dashboard] {line}", flush=True)
+        except Exception as e:
+            print(f"[dashboard] drain error: {e!r}", flush=True)
+        finally:
+            rc = self.proc.returncode if self.proc else None
+            if rc is not None and rc != 0:
+                print(f"[dashboard] EXITED with code {rc} — reverse proxy will return 503 until restart", flush=True)
+            elif rc == 0:
+                print(f"[dashboard] exited cleanly (code 0)", flush=True)
 
     async def stop(self):
         if not self.proc or self.proc.returncode is not None:
