@@ -34,4 +34,10 @@ RUN chmod +x /app/start.sh
 ENV HOME=/data
 ENV HERMES_HOME=/data/.hermes
 
+RUN curl -fsSL https://bun.sh/install | bash
+ENV PATH="/root/.bun/bin:$PATH"
+RUN git clone https://github.com/garrytan/gbrain.git /gbrain \
+    && cd /gbrain && bun install && bun link
+RUN gbrain init
+
 CMD ["/app/start.sh"]
